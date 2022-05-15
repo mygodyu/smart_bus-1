@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+	<style type="text/css">
+		body, html {
+			width: 100%;
+			height: 100%; 
+			margin:0;
+			font-family:"微软雅黑";
+            font-size: 16px;
+		}
+    .info{
+        z-index: 999;
+        width: 25%;
+        height: 20%;
+        position: absolute;
+        left: 0%;
+        top:0%;
+        background-color: rgba(265, 265, 265, 0.9);
+        font-size: 0.875rem;
+        color: #666;
+        box-shadow: 0 0.125rem 0.375rem 0 rgba(23, 142, 240, 0.3);
+    }
+    #positioninput{
+        width: 75%;
+        padding-left: 0.5rem;
+        margin: 0.2rem 0.5rem 0 0; 
+        font-size:x-small; 
+    }
+    #positioninput_2{
+        width: 75%;
+        padding-left: 0.5rem;
+        margin: 0.2rem 0.5rem 0 0; 
+        font-size:x-small; 
+    }
+    #positioninput_3{
+        width: 75%;
+        padding-left: 0.5rem;
+        margin: 0.5rem 0.5rem 0 0; 
+        font-size:x-small; 
+    }
+    #change-btn{
+        width: 85%;
+        background: #5679ea;
+        border: 0;
+        padding-left: 0.5rem;
+        margin: 0.3rem 0.5rem 0.1rem 0;
+        cursor: pointer;
+        border-radius: 0.125rem;
+        color: #fff;
+        font-size:x-small; 
+    }
+    #search{
+        background: #f00e59;
+        border: 0;
+        padding-left: 0.5rem;
+        margin: 0.625rem 0.5rem 0 0;
+        cursor: pointer;
+        border-radius: 0.125rem;
+        color: #fff;
+        font-size:x-small; 
+
+
+    }
+    #location_cur{
+        background: #f00e59;
+        border: 0;
+        padding-left: 0.5rem;
+        margin: 0.1rem 0.5rem 0 0;
+        cursor: pointer;
+        border-radius: 0.125rem;
+        color: #fff;
+        font-size:x-small; 
+
+
+    }
+    #refrash{
+        background: #f00e59;
+        border: 0;
+        padding-left: 0.5rem;
+        margin: 0.625rem 0.5rem 0 0;
+        cursor: pointer;
+        border-radius: 0.125rem;
+        color: #fff;
+        font-size:x-small; 
+
+
+    }
+    #l-map{
+            height:100%;
+            width:100%;
+		}
+	#driving_way{
+            position:absolute;
+            right: 0%;
+            top: 0%;
+            height: 10%;
+            width:60%;
+            background: #fff;
+            box-shadow: 0 0.125rem 0.375rem 0 rgba(27, 142, 236, 0.5);
+            border-radius: 0.4375rem;
+			z-index: 99;
+			padding: 0.625rem
+		}
+    #option{
+    color:rgb(54, 40, 49);
+    font-size:x-small;   
+    }
+	#result{
+			height:90%; 
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: auto;
+            font-size:x-small; 
+		}
+	</style>
+	<script type="text/javascript" src="https://api.map.baidu.com/api?type=webgl&v=1.0&ak=PHl86ZXOyjrCQgvinN5Qoa7KyT8PCGit"></script>
+	<script src="https://code.bdstatic.com/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+	<title>根据起终点经纬度查询公交换乘</title>
+</head>
+<body>
+    <div class="info">
+        <button id="change-btn"  onclick="SetCentrePoi()">设置定位城市</button>
+        <input id="positioninput_3" type="text" value="绵阳市" >
+        <button id='location_cur' onclick="location_cur()">自动定位</button>
+        <button id="change-btn"  onclick="SetStartPoi()">设置起始点</button>
+        <input id="positioninput" type="text" >
+        <button id="change-btn"  onclick="SetEndPoi()">设置终点</button>
+        <input id="positioninput_2" type="text" >
+    </div>
+    <div id="driving_way">
+        <select id="option">
+            <option value="0">推荐方案</option>
+            <option value="1">最少时间</option>
+            <option value="2">最少换乘</option>
+            <option value="3">最少步行</option>
+            <option value="4">不乘地铁</option>
+            <option value='5'>优先地铁</option>
+        </select>
+        <button id='search'>查询</button>
+
+        <button id='refrash' onclick="refrash()">刷新</button>
+        <p id='result'></p>
+    </div>
+
+    <div id="l-map"></div>
+</body>
+</html>
+<script type="text/javascript">
+// 百度地图API功能
+    var centerPoi=new window.BMapGL.Point(104.69288, 31.46708);
+    var map = new BMapGL.Map("l-map");         
+	map.centerAndZoom(centerPoi, 14);
+    map.enableScrollWheelZoom(true);     //开启鼠标滚轮缩放
+
+//添加组件
+    var zoomCtrl = new BMapGL.ZoomControl({
+        anchor:BMAP_ANCHOR_BOTTOM_LEFT
+    }); 
+    map.addControl(zoomCtrl);
+//设置中心城市
+    function SetCentrePoi() {
+        var val=document.getElementById('positioninput_3').value;
+        if(val!==""&&!val.includes("已定位到")){
+            var gc= new BMapGL.Geocoder();
+            gc.getPoint(val,function(res){
+                if(res)
+                {
+                    centerPoi.lng=res.lng;
+                    centerPoi.lat=res.lat;
+
+                    document.getElementById('positioninput_3').value="";
+                    document.getElementById('positioninput_3').value=("已定位到"+val);
+                    map.centerAndZoom(centerPoi, 14);
+                }
+                else
+                {
+                    document.getElementById('positioninput_3').value="设置失败";
+
+                }
+
+            },val)
+
+        }
+
+    }
+//设置点位置
+    var start;
+	var end;
+    var flag =false;
+    var flag_2= false;
+    var local=new BMapGL.LocalSearch(map,{
+        renderOptions:{map: map}
+    });
+    local.setPageCapacity(1);
+    local.disableAutoViewport();
+    function SetStartPoi()
+    {
+        var val=document.getElementById('positioninput').value;
+        if(val===""||val==="设置成功")
+        {
+        refrash();
+        document.getElementById('positioninput').value="单击地图";
+        flag=true;
+        }
+
+        else
+        {   
+            local.search(val);
+            map.clearOverlays(); 
+            local.setMarkersSetCallback(
+                function (array) {
+                    console.log(array[0]);
+                    start =array[0].point;
+                    document.getElementById('positioninput').value="设置成功";
+                 });
+
+        }
+
+    }
+    function SetEndPoi()
+    {
+        var val=document.getElementById('positioninput_2').value;
+        if(val==="")
+        {
+        document.getElementById('positioninput_2').value="单击地图";
+        flag_2=true;
+        }
+        else
+        {
+            local.search(val);
+            map.clearOverlays(); 
+            local.setMarkersSetCallback(
+                function (array) {
+                    end=array[0].point;
+                    document.getElementById('positioninput_2').value="设置成功";
+                 });
+
+        }
+
+    }
+    map.addEventListener('click', function (e){
+        if(flag)
+        {
+            start=new BMapGL.Point(e.latlng.lng, e.latlng.lat);
+            map.addOverlay(new BMapGL.Marker(start));
+            flag=false;
+            document.getElementById('positioninput').value="设置成功";
+            return;
+        }
+        if(flag_2)
+        {
+            end=new BMapGL.Point(e.latlng.lng, e.latlng.lat);
+            map.addOverlay(new BMapGL.Marker(end));
+            flag_2=false;
+            document.getElementById('positioninput_2').value="设置成功";
+            return;
+        }
+    })
+
+//路劲规划
+	var routePolicy = [BMAP_TRANSIT_POLICY_RECOMMEND,BMAP_TRANSIT_POLICY_LEAST_TIME,BMAP_TRANSIT_POLICY_LEAST_TRANSFER,BMAP_TRANSIT_POLICY_LEAST_WALKING,BMAP_TRANSIT_POLICY_AVOID_SUBWAYS,BMAP_TRANSIT_POLICY_FIRST_SUBWAYS];
+	var transit = new BMapGL.TransitRoute(map, {
+			renderOptions: {map: map, panel: 'result'},
+            policy: 0,
+            
+	});
+	$("#search").click(function(){
+        var val=document.getElementById('positioninput').value;
+        var val_2=document.getElementById('positioninput_2').value;
+        if(val==="设置成功"&&val_2==="设置成功")
+        {
+        map.clearOverlays(); 
+		var i= $("#driving_way select").val();
+        document.getElementById('driving_way').style.height='40%';
+		search(start,end,routePolicy[i]); 
+		function search(start,end,route){ 
+			transit.setPolicy(route);
+            transit.search(start,end);
+		}
+        }
+	});
+//刷新
+    function refrash(){
+        map.clearOverlays(); 
+        document.getElementById('driving_way').style.height='10%';
+        document.getElementById('result').innerHTML='';
+        document.getElementById('positioninput').value='';
+        document.getElementById('positioninput_2').value='';
+        map.centerAndZoom(centerPoi, 14);
+    }
+//定位当前位置
+    function location_cur()
+    { 
+        var geoposition=new BMapGL.Geolocation();
+        geoposition.enableSDKLocation();
+        geoposition.getCurrentPosition(function(r)
+        {
+            if(this.getStatus() == BMAP_STATUS_SUCCESS) 
+            {
+                    centerPoi=r.point;
+                    var gc= new BMapGL.Geocoder();
+                    gc.getLocation(centerPoi,function(res){
+                        if(res)
+                        {
+                        var val=res.addressComponents.city;
+                        document.getElementById('positioninput_3').value="";
+                        document.getElementById('positioninput_3').value=("已定位到"+val);
+                        }
+                    })
+            }
+            map.centerAndZoom(centerPoi, 14);
+        })
+    }
+</script>
